@@ -45,7 +45,7 @@ func (p *Processer) getSubScribe(c *gin.Context) {
 	}
 	ttsHost := args["host"]
 	delete(args, "host")
-	args["text"] = "{{String(speakText)}}"
+	args["text"] = "{{speakText}}"
 	buf, err := json.Marshal(args)
 	if err != nil {
 		log.Logger.Error(err)
