@@ -25,6 +25,7 @@ interface Wrapper {
 const ConfigurationForm: React.FC<object> = () => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [wrappers, setWrappers] = useState<Wrapper[]>([]);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   useEffect(() => {
     axios.get<{ error: string; fields: Field[] }>('/tts/api/fields')
@@ -49,12 +50,17 @@ const ConfigurationForm: React.FC<object> = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const removeNode = (targetWrapper: Wrapper, wrappers: Wrapper[]): Wrapper[] => {
+    targetWrapper.children.forEach((child) => {
+      wrappers = removeNode(child, wrappers);
+    });
+    return wrappers.filter(({ field }) => field !== targetWrapper.field);
+  };
+
   const removeChildren = (targetWrapper: Wrapper, wrappers: Wrapper[]): Wrapper[] => {
     targetWrapper.children.forEach((child) => {
-      wrappers = removeChildren(child, wrappers);
-      wrappers = wrappers.filter(({ field }) => field !== child.field);
+      wrappers = removeNode(child, wrappers);
     });
-    targetWrapper.children = [];
     return wrappers;
   };
 
@@ -62,22 +68,28 @@ const ConfigurationForm: React.FC<object> = () => {
     const selectedOption = targetWrapper.field.options.find(opt => opt.value === value);
     const relatedFields = selectedOption?.relatedFields;
     setWrappers((prev) => {
-      let wrappers = removeChildren(targetWrapper, prev);
+      const wrappers = removeChildren(targetWrapper, prev);
       const newChildren = relatedFields ? relatedFields.map((field) => ({ field, children: [] })) : [];
       targetWrapper.children = newChildren;
-      wrappers = [...wrappers, ...newChildren];
-      return wrappers;
+      return [...wrappers, ...newChildren];
     });
     handleChange(targetWrapper.field.name, value);
+    setFormData((prev) => {
+      return Object.fromEntries(
+        Object.entries(prev).filter(([key]) =>
+          wrappers.some((wrapper) => wrapper.field.name === key)
+        )
+      );
+    });
   };
 
 
-  const handleListen = (button: HTMLButtonElement) => {
+  const handleListen = () => {
     // Create a new AudioContext
     const ctx = new window.AudioContext;
   
     // Get the button element to enable/disable it
-    button.disabled = true;
+    setIsDisabled(true);
   
     // Make the API call to fetch the audio
     axios.post<ArrayBuffer>('/tts/api/invoke', formData, {
@@ -108,7 +120,7 @@ const ConfigurationForm: React.FC<object> = () => {
       })
       .finally(() => {
         // Re-enable the button after the process is finished
-        button.disabled = false;
+        setIsDisabled(false);
       });
   };
 
@@ -160,11 +172,12 @@ const ConfigurationForm: React.FC<object> = () => {
                     if (formData[field.name]) {
                       return formData[field.name];
                     }
-                    if (field.defaultValue) {
-                      handleSelectChange(wrapper, field.defaultValue);
-                      return field.defaultValue
+                    let dv = field.defaultValue;
+                    if (dv === "") {
+                      dv = field.options[0].value
                     }
-                    return '';
+                    handleSelectChange(wrapper, dv);
+                    return dv;
                   })()}
                   onChange={(value) => handleSelectChange(wrapper, value.target.value)}>
                     {field.options.map(({ value }) => (  
@@ -198,7 +211,9 @@ const ConfigurationForm: React.FC<object> = () => {
         <p className="form-desc">Text for testing</p>
       </div>
       <button className="form-button"
-        onClick={(e)=>handleListen(e.currentTarget)}>Listen</button>
+        onClick={()=>handleListen()}
+        disabled={isDisabled}
+      >Listen</button>
       
       <button className="form-button"
         onClick={()=>handleGenerateSubscribeURL()}>Generate subscribe URL</button>
