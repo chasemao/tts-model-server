@@ -49,7 +49,7 @@ go build -o tts-model-server
 
 ## Web UI 使用方法  
 
-访问：[http://localhost:1233/tts/webui](http://localhost:1233/tts/webui)  
+访问：[http://localhost:1233/tts/webui/](http://localhost:1233/tts/webui/)  
 
 - 选择 TTS 模型  
 - 输入文本，生成语音  

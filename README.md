@@ -39,13 +39,13 @@ By default, the server listens on `0.0.0.0:1233`.
 
 | Flag  | Description | Default |
 |-------|------------|---------|
-| `--token` | API access token (optional) | *empty* |
-| `--ip` | Server IP to bind to | `0.0.0.0` |
-| `--port` | Port to listen on | `1233` |
+| `-token` | API access token (optional) | *empty* |
+| `-ip` | Server IP to bind to | `0.0.0.0` |
+| `-port` | Port to listen on | `1233` |
 
 ## Web UI  
 
-Visit: [http://localhost:1233/tts/webui](http://localhost:1233/tts/webui)  
+Visit: [http://localhost:1233/tts/webui/](http://localhost:1233/tts/webui/)  
 - Select a TTS model  
 - Input text and generate speech  
 - Copy the subscription link for `legado` app  
