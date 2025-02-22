@@ -1,4 +1,4 @@
-# TTS Model Server  
+# TTS Model Server [中文](./doc/README-cn.md)
 
 TTS Model Server is a `gin`-based API server for text-to-speech (TTS) with multiple model integrations.  
 
