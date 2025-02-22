@@ -4,6 +4,26 @@ import { useState, useEffect } from "react";
 import axios from 'axios';
 import GitHubButton from 'react-github-btn';
 import "./form.css";
+import { Helmet } from 'react-helmet';
+import Link from 'next/link';
+
+function GoogleAnalytics() {
+  return (
+    <Helmet>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-F6K80FT3TZ"></script>
+      <script>
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            window.dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', 'G-F6K80FT3TZ');
+        `}
+      </script>
+    </Helmet>
+  );
+};
 
 interface Option {
   value: string;
@@ -65,6 +85,8 @@ const ConfigurationForm: React.FC<object> = () => {
   };
 
   const handleSelectChange = (targetWrapper: Wrapper, value: string) => {
+    handleChange(targetWrapper.field.name, value);
+
     const selectedOption = targetWrapper.field.options.find(opt => opt.value === value);
     const relatedFields = selectedOption?.relatedFields;
     setWrappers((prev) => {
@@ -73,7 +95,6 @@ const ConfigurationForm: React.FC<object> = () => {
       targetWrapper.children = newChildren;
       return [...wrappers, ...newChildren];
     });
-    handleChange(targetWrapper.field.name, value);
     setFormData((prev) => {
       return Object.fromEntries(
         Object.entries(prev).filter(([key]) =>
@@ -149,75 +170,79 @@ const ConfigurationForm: React.FC<object> = () => {
   
 
   return (
-    <div className="config-form">
-      <GitHubButton href="https://github.com/chasemao/tts-model-server">Star tts-moder-server</GitHubButton>
-      <h2 className="form-title">TTS Model Server WebUI</h2>
-      
-      <div className="form-group">
-        <label className="form-label">Token</label>
-        <input className="form-input" onChange={(e) => handleChange("token", e.target.value)} />
-        <p className="form-desc">Input -token when running server, can be empty</p>
+    <>
+      <GoogleAnalytics/>
+      <div className="config-form">
+        <GitHubButton href="https://github.com/chasemao/tts-model-server">Star tts-model-server</GitHubButton>
+        <Link className="home-redirect" href="/">Back to Chase Mao&apos;s Blog</Link>
+        <h2 className="form-title">TTS Model Server WebUI</h2>
+        
+        <div className="form-group">
+          <label className="form-label">Token</label>
+          <input className="form-input" onChange={(e) => handleChange("token", e.target.value)} />
+          <p className="form-desc">Input -token when running server, can be empty</p>
+        </div>
+        
+        <div className="fields-container">
+          {wrappers.map((wrapper) => {
+            const { field } = wrapper;
+            return (
+              <div key={field.name} className="form-group">
+                <label className="form-label">{field.name}</label>
+                {field.options && field.options.length !== 0 ? (
+                  <select 
+                    className="form-select"
+                    value={(() => {
+                      if (formData[field.name]) {
+                        return formData[field.name];
+                      }
+                      let dv = field.defaultValue;
+                      if (dv === "") {
+                        dv = field.options[0].value
+                      }
+                      handleSelectChange(wrapper, dv);
+                      return dv;
+                    })()}
+                    onChange={(value) => handleSelectChange(wrapper, value.target.value)}>
+                      {field.options.map(({ value }) => (  
+                        <option key={value} value={value}>{value}</option>
+                      ))}
+                  </select>
+                ) : (
+                  <input 
+                    className="form-input"
+                    defaultValue={field.defaultValue} 
+                    onChange={(e) => handleChange(field.name, e.target.value)} 
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">Test Text</label>
+          <input className="form-input" value={(()=>{
+            if (formData["text"]) {
+              return formData["text"];
+            }
+            const dv = "It is a paragraph for testing, thank you for starring the github repo.";
+            formData["text"] = dv;
+            return dv;
+          })()}
+          onChange={(e) => handleChange("text", e.target.value)} 
+          />
+          <p className="form-desc">Text for testing</p>
+        </div>
+        <button className="form-button"
+          onClick={()=>handleListen()}
+          disabled={isDisabled}
+        >Listen</button>
+        
+        <button className="form-button"
+          onClick={()=>handleGenerateSubscribeURL()}>Generate subscribe URL</button>
       </div>
-      
-      <div className="fields-container">
-        {wrappers.map((wrapper) => {
-          const { field } = wrapper;
-          return (
-            <div key={field.name} className="form-group">
-              <label className="form-label">{field.name}</label>
-              {field.options && field.options.length !== 0 ? (
-                <select 
-                  className="form-select"
-                  value={(() => {
-                    if (formData[field.name]) {
-                      return formData[field.name];
-                    }
-                    let dv = field.defaultValue;
-                    if (dv === "") {
-                      dv = field.options[0].value
-                    }
-                    handleSelectChange(wrapper, dv);
-                    return dv;
-                  })()}
-                  onChange={(value) => handleSelectChange(wrapper, value.target.value)}>
-                    {field.options.map(({ value }) => (  
-                      <option key={value} value={value}>{value}</option>
-                    ))}
-                </select>
-              ) : (
-                <input 
-                  className="form-input"
-                  defaultValue={field.defaultValue} 
-                  onChange={(e) => handleChange(field.name, e.target.value)} 
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-      
-      <div className="form-group">
-        <label className="form-label">Test Text</label>
-        <input className="form-input" value={(()=>{
-          if (formData["text"]) {
-            return formData["text"];
-          }
-          const dv = "It is a paragraph for testing, thank you for starring the github repo.";
-          formData["text"] = dv;
-          return dv;
-        })()}
-        onChange={(e) => handleChange("text", e.target.value)} 
-        />
-        <p className="form-desc">Text for testing</p>
-      </div>
-      <button className="form-button"
-        onClick={()=>handleListen()}
-        disabled={isDisabled}
-      >Listen</button>
-      
-      <button className="form-button"
-        onClick={()=>handleGenerateSubscribeURL()}>Generate subscribe URL</button>
-    </div>
+    </>
   );
 };
 
